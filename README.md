@@ -119,6 +119,110 @@ Available make commands:
 - `make local` - Run backend only
 - `make update` - Commit and push changes
 - `make test` - Run tests (customizable)
+- `make deploy` - Deploy to Google Cloud Run
+
+## Deployment
+
+The project includes a comprehensive deployment manager that handles:
+- Docker image building and pushing to Google Container Registry
+- Cloud Run deployment
+- Service account creation and configuration
+- GitHub secrets setup
+- CI/CD workflow configuration
+
+### Initial Deployment
+
+To deploy your application to Google Cloud Run:
+
+```bash
+make deploy
+```
+
+This will:
+1. Update CI/CD configuration with project-specific values
+2. Build and push Docker container to GCR
+3. Deploy the container to Cloud Run
+4. Create a service account with necessary permissions
+5. Configure GitHub secrets for automatic deployments
+6. Enable the CI/CD workflow
+
+After successful deployment, any commits to the `main` branch will automatically:
+1. Build a new Docker image
+2. Push it to Google Container Registry
+3. Deploy the updated container to Cloud Run
+
+### Managing GitHub Secrets
+
+The deployment system automatically sets up the service account credentials as a GitHub secret. You can add additional secrets (API keys, tokens, etc.) using the manager CLI:
+
+```bash
+# Add a secret interactively (will prompt for value)
+python -m manager secrets add --name API_KEY
+
+# Add a secret with a value
+python -m manager secrets add --name API_KEY --value abc123
+
+# Add a secret from a file
+python -m manager secrets add --name API_KEY --file key.txt
+```
+
+To use secrets in your application, add them to the Cloud Run deployment in `.github/workflows/cicd.yaml`:
+
+```yaml
+- name: Deploy to Cloud Run
+  run: |
+    gcloud run deploy $SERVICE_NAME \
+      --image ${{ env.DOCKER_IMAGE_URL }}:latest \
+      --platform managed \
+      --region ${{ env.CONTAINER_REGION }} \
+      --port 80 \
+      --set-env-vars="API_KEY=${{ secrets.API_KEY }}"
+```
+
+### Manager CLI Commands
+
+The project includes a comprehensive CLI for managing deployments:
+
+```bash
+# Deployment
+python -m manager deploy                    # Deploy to GCP
+python -m manager deploy --region us-east1  # Deploy to specific region
+
+# Status and Monitoring
+python -m manager status                    # Show project status
+python -m manager status -v                 # Show detailed status
+python -m manager history                   # Show operation history
+
+# Configuration
+python -m manager config --list             # List all config values
+python -m manager config --get region       # Get a config value
+python -m manager config --set key=value    # Set a config value
+
+# Service Account Management
+python -m manager service-account create                    # Create service account
+python -m manager service-account delete                    # Delete service account
+python -m manager service-account add-permissions           # Add default permissions
+python -m manager service-account add-permissions --roles roles/run.admin
+python -m manager service-account remove-permissions        # Remove permissions
+
+# GitHub Secrets
+python -m manager secrets add --name SECRET_NAME            # Add/update a secret
+
+# Cleanup
+python -m manager clean                     # Clean up all resources
+python -m manager clean --skip-local        # Clean GCP/GitHub but keep local files
+```
+
+### CI/CD Workflow
+
+The project includes a GitHub Actions workflow (`.github/workflows/cicd.yaml`) that automatically deploys on push to `main`. The workflow:
+
+1. Builds the Docker image for linux/amd64 platform
+2. Pushes to Google Container Registry (gcr.io)
+3. Deploys to Cloud Run with the configured settings
+4. Uses cached Docker layers for faster builds
+
+The workflow is automatically configured and enabled during the deployment process.
 
 ## Managing Dependencies
 

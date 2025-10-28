@@ -1,3 +1,4 @@
 [submodule "manager"]
 	path = manager
 	url = https://github.com/achsaf6/bff-manager.git
+	branch = main

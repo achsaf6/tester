@@ -1,11 +1,11 @@
 name: Update Cloud Run Service
 
 env:
-  SERVICE_NAME: bff-template-service-name
+  SERVICE_NAME: tester
   PROJECT_ID: marketing-innovation-450013
   IMAGE_REGION: europe-west4
   CONTAINER_REGION: europe-west4
-  DOCKER_IMAGE_URL: bff-template-image-url
+  DOCKER_IMAGE_URL: gcr.io/marketing-innovation-450013/tester
 
 on:
   push:
@@ -14,7 +14,6 @@ on:
 
 jobs:
   dockerize-and-deploy:
-  if: false 
     runs-on: ubuntu-latest
 
     steps:
@@ -27,15 +26,15 @@ jobs:
       - name: Google Cloud Auth
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: ${{ secrets.BFF_TEMPLATE_SA }}
+          credentials_json: ${{ secrets.TESTER_SA }}
           project_id: ${{ env.PROJECT_ID }}
 
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v2'
 
-      - name: Configure Docker
+      - name: Configure Docker for GCR
         run: |
-          gcloud auth configure-docker
+          gcloud auth configure-docker gcr.io
 
       # Set up caching for Docker layers
       - name: Cache Docker layers
@@ -69,7 +68,6 @@ jobs:
             --image ${{ env.DOCKER_IMAGE_URL }}:latest \
             --platform managed \
             --region ${{ env.CONTAINER_REGION }} \
-            --port 80 \
+            --port 8080 \
             --memory 16Gi \
-            --cpu 4
-          
+            --cpu 4      
